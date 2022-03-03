@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "react-query";
 //Components
 import Item from "./Item/Item";
+import Cart from './Cart/Cart';
 import {StyledButton} from './App.styles';
 import Drawer from '@material-ui/core/Drawer';
 import LinearProgress from '@material-ui/core/LinearProgress';
@@ -36,9 +37,32 @@ const App= ()=> {
     const getTotalItems = (items : CartItemType[])=> 
         items.reduce((acc: number, item) => acc+ item.amount, 0 );
 
-    const handleAddToCart = (clickedItem: CartItemType)=> null;
+    const handleAddToCart = (clickedItem: CartItemType)=> {
+        setCartItems(prev => {
+             const isItemInCart = prev.find(item => item.id === clickedItem.id)
+             if(isItemInCart){
+                 return prev.map(item=>(
+                     item.id === clickedItem.id
+                     ? {...item, amount : item.amount + 1}
+                     : item
+                 ))
+             }
+             return [...prev, {...clickedItem, amount : 1}]
+        })
+    }
 
-    const handleRemoveFromCart = () => null;
+    const handleRemoveFromCart = (id: number) => {
+        setCartItems(prev => 
+            prev.reduce((acc, item) => {
+                if(item.id === id){
+                    if(item.amount === 1) return acc;
+                    return [...acc, {...item, amount: item.amount-1}]
+                }else {
+                    return [...acc, item]
+                }
+            }, [] as CartItemType[]) 
+        )
+    }
 
     if(isLoading) return <LinearProgress />
     if(error) return <div>Something went wrong .</div>
@@ -46,7 +70,7 @@ const App= ()=> {
     return (
         <Wrapper>
             <Drawer anchor= 'right' open = {cartOpen} onClose={()=> setCartOpen(false)}>
-                Cart goes here
+                <Cart cartItems={cartItems} addToCart={handleAddToCart} removeFromCart={handleRemoveFromCart} />
             </Drawer>   
             <StyledButton onClick ={()=> setCartOpen(true)}>
                 <Badge badgeContent={getTotalItems(cartItems)}  color='error'>
